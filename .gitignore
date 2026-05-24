@@ -1,0 +1,32 @@
+# Environment
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.venv/
+venv/
+
+# macOS
+.DS_Store
+Thumbs.db
+
+# Copyrighted source material — never commit
+sources/
+
+# Raw ingested text derived from sources
+output/ramit-sethi/ingested/
+
+# Pipeline intermediates — large, regenerable, not needed by server
+output/ramit-sethi/chunk_index.jsonl
+output/ramit-sethi/source_registry.jsonl
+output/ramit-sethi/state.json
+output/ramit-sethi/summaries/
+
+# Copyrighted verbatim chunk text — transfer to Mac Mini via rsync, not git
+output/ramit-sethi/evidence_index.jsonl
+output/ramit-sethi/project_upload/chunks/
