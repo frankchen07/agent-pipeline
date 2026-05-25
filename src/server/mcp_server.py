@@ -74,4 +74,4 @@ def query_ramit(query: str, top_k: int = 8) -> str:
 
 if __name__ == "__main__":
     logger.info(f"Starting MCP server on port {_PORT} (output dir: {_OUTPUT_DIR})")
-    mcp.run(transport="streamable-http", host="0.0.0.0", port=_PORT)
+    mcp.run(transport="sse", host="0.0.0.0", port=_PORT)
