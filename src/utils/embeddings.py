@@ -20,6 +20,10 @@ def _load_model(model_name: str = "all-MiniLM-L6-v2"):
     return _model
 
 
+def warm_model(model_name: str = "all-MiniLM-L6-v2") -> None:
+    _load_model(model_name)
+
+
 def embed_texts(texts: list[str], model_name: str = "all-MiniLM-L6-v2") -> list[list[float]]:
     model = _load_model(model_name)
     vectors = model.encode(texts, show_progress_bar=False, normalize_embeddings=True)

@@ -7,7 +7,7 @@ import numpy as np
 from dotenv import load_dotenv
 from fastmcp import FastMCP
 
-from src.utils.embeddings import embed_text
+from src.utils.embeddings import embed_text, warm_model
 from src.utils.jsonl import read_jsonl
 
 load_dotenv()
@@ -66,6 +66,7 @@ mcp = FastMCP("agent-pipeline")
 )
 def query_ramit(query: str, top_k: int = 8) -> str:
     """Query Ramit Sethi's knowledge base. Returns core persona context + most relevant source chunks."""
+    logger.info(f"query_ramit called: {query!r}")
     q_vec = np.array(embed_text(query), dtype=np.float32)
     top_indices = _cosine_top_k(q_vec, _embeddings, top_k)
     chunks = "\n\n".join(_format_chunk(_records[i]) for i in top_indices)
@@ -74,4 +75,7 @@ def query_ramit(query: str, top_k: int = 8) -> str:
 
 if __name__ == "__main__":
     logger.info(f"Starting MCP server on port {_PORT} (output dir: {_OUTPUT_DIR})")
+    logger.info("Pre-warming embedding model...")
+    warm_model()
+    logger.info("Embedding model ready.")
     mcp.run(transport="sse", host="0.0.0.0", port=_PORT)
