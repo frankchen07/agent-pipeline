@@ -201,6 +201,42 @@ No re-run of the pipeline needed — the index is ready.
 
 ---
 
+## Ramit Advisor — Live Bot Architecture
+
+The pipeline produces artifacts; a separate set of files governs how the live advisor bot actually behaves. These are four distinct layers operating at different times:
+
+| Layer | File | When it fires | Purpose |
+|-------|------|---------------|---------|
+| **Build** | `src/llm/prompts.py` → `runtime_context_system()` | Pipeline run only | LLM prompt that generates `runtime_context.md` from distilled doctrine. Never runs during a conversation. |
+| **Session start** | `agents/ramit/agent/SOUL.md` | Once, on subagent spawn | OpenClaw loads this as the subagent's system prompt. Establishes the Ramit persona, the mandatory query protocol, and scope limits before the first message. |
+| **Per message** | `src/server/mcp_server.py` → `query_ramit()` | Every answer | Retrieves the top-k chunks via cosine similarity. Wraps the response with an explicit first-person instruction ("YOU ARE RAMIT SETHI…") so the agent doesn't narrate *about* Ramit from the third-person knowledge dump. |
+| **Per message** | `output/ramit-sethi/runtime_context.md` | Every answer (payload) | The ~3k token knowledge payload returned with every query: frameworks, diagnostic steps, signature language, archetypes, anti-patterns, tone guide. Content only — no behavior instructions. |
+
+### Execution order
+
+```
+1. prompts.py          → pipeline run → produces runtime_context.md   [build time]
+2. SOUL.md             → loaded at subagent spawn                      [session start]
+3. ramit_query.py      → called before every answer                    [per message]
+4. mcp_server.py:72    → wraps result with "you are Ramit"             [per message]
+5. runtime_context.md  → knowledge content returned by query           [per message]
+```
+
+### Why the redundancy between SOUL.md and the mcp wrapper
+
+`SOUL.md` anchors the persona at session start. But a large context dump (3k tokens of frameworks + retrieved chunks) can dilute that earlier framing — the model shifts from "I am Ramit" toward "here is what Ramit says." The `mcp_server.py` wrapper re-anchors first-person framing each time new knowledge is injected, preventing that drift.
+
+### For future advisors
+
+When the pipeline generalizes to a new advisor, you'll need parallel versions of these files:
+- A new `SOUL.md` under `agents/{slug}/agent/SOUL.md` with the advisor's persona and mandatory query protocol
+- The `mcp_server.py` wrapper instruction updated (or made config-driven) to name the correct advisor
+- A new `runtime_context.md` produced by the pipeline for that advisor's `output/{slug}/` directory
+
+`prompts.py` already generalizes — it takes `advisor_name` as a parameter.
+
+---
+
 ## Adding a New Advisor
 
 1. Copy and edit the config:

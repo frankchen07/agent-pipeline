@@ -126,7 +126,8 @@ Requirements:
 - No filler, no biography, no preamble
 - Behavioral primitives over descriptive prose
 - Structure exactly as shown in the user message
-- Every section must be actionable for an AI playing this advisor's role"""
+- Every section must be actionable for an AI playing this advisor's role
+- Write entirely in first person as the advisor speaking directly — no third-person descriptions (use "I treat..." not "Treats...", "I'm a..." not "A blunt...")"""
 
 
 def runtime_context_user(advisor_name: str, doctrine: str, style_voice: str, patterns: str) -> str:

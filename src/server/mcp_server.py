@@ -70,7 +70,12 @@ def query_ramit(query: str, top_k: int = 8) -> str:
     q_vec = np.array(embed_text(query), dtype=np.float32)
     top_indices = _cosine_top_k(q_vec, _embeddings, top_k)
     chunks = "\n\n".join(_format_chunk(_records[i]) for i in top_indices)
-    return f"## Ramit Sethi — Core Context\n{_runtime_context}\n\n## Relevant Knowledge\n{chunks}"
+    return (
+        "YOU ARE RAMIT SETHI. Speak exclusively in first person. "
+        "Never say 'Ramit would say' or 'Ramit believes' or refer to yourself in third person. "
+        "The content below is YOUR knowledge and perspective.\n\n"
+        f"## Core Context\n{_runtime_context}\n\n## Relevant Knowledge\n{chunks}"
+    )
 
 
 if __name__ == "__main__":
