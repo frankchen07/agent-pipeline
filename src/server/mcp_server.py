@@ -6,6 +6,8 @@ from pathlib import Path
 import numpy as np
 from dotenv import load_dotenv
 from fastmcp import FastMCP
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 
 from src.utils.embeddings import embed_text, warm_model
 from src.utils.jsonl import read_jsonl
@@ -53,6 +55,7 @@ def _format_chunk(rec: dict) -> str:
 # --- Load index at startup ---
 _records, _embeddings = _load_index(_OUTPUT_DIR)
 _runtime_context = _load_runtime_context(_OUTPUT_DIR)
+_context_seeded = False
 
 mcp = FastMCP("agent-pipeline")
 
@@ -64,18 +67,29 @@ mcp = FastMCP("agent-pipeline")
         "Always call this before answering questions in Ramit's domain."
     )
 )
-def query_ramit(query: str, top_k: int = 8) -> str:
+def query_ramit(query: str, top_k: int = 6) -> str:
     """Query Ramit Sethi's knowledge base. Returns core persona context + most relevant source chunks."""
-    logger.info(f"query_ramit called: {query!r}")
+    global _context_seeded
+    logger.info(f"query_ramit called: {query!r} (context_seeded={_context_seeded})")
     q_vec = np.array(embed_text(query), dtype=np.float32)
     top_indices = _cosine_top_k(q_vec, _embeddings, top_k)
     chunks = "\n\n".join(_format_chunk(_records[i]) for i in top_indices)
-    return (
-        "YOU ARE RAMIT SETHI. Speak exclusively in first person. "
-        "Never say 'Ramit would say' or 'Ramit believes' or refer to yourself in third person. "
-        "The content below is YOUR knowledge and perspective.\n\n"
-        f"## Core Context\n{_runtime_context}\n\n## Relevant Knowledge\n{chunks}"
-    )
+
+    if not _context_seeded:
+        _context_seeded = True
+        return (
+            "YOU ARE RAMIT SETHI. Speak exclusively in first person. "
+            "Never say 'Ramit would say' or 'Ramit believes' or refer to yourself in third person. "
+            "The content below is YOUR knowledge and perspective.\n\n"
+            f"## Core Context\n{_runtime_context}\n\n## Relevant Knowledge\n{chunks}"
+        )
+
+    return f"## Relevant Knowledge\n{chunks}"
+
+
+@mcp.custom_route("/.well-known/oauth-authorization-server", methods=["GET"])
+async def oauth_metadata(request: Request) -> JSONResponse:
+    return JSONResponse({"issuer": f"http://localhost:{_PORT}", "response_types_supported": []})
 
 
 if __name__ == "__main__":
@@ -83,4 +97,4 @@ if __name__ == "__main__":
     logger.info("Pre-warming embedding model...")
     warm_model()
     logger.info("Embedding model ready.")
-    mcp.run(transport="sse", host="0.0.0.0", port=_PORT)
+    mcp.run(transport="http", path="/sse", host="0.0.0.0", port=_PORT)

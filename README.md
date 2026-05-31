@@ -123,6 +123,17 @@ Writes `assembly_report.md` with:
 
 ---
 
+## Summary of the Flow
+
+The real chain per query:
+1. Claude calls [query_agent] via MCP (SSE HTTP round-trip)
+2. Embedding the query (fast, model is pre-warmed)
+3. Cosine search (numpy, ~0ms)
+4. Returns runtime_context.md (~3k tokens) + persona header + 8 chunks × 500 tokens = ~7-8k tokens in one tool result
+5. Claude generates a response against that massive context ← this is where most of your 20-25s lives.
+
+---
+
 ## Setup
 
 **Prerequisites:** Python 3.11+

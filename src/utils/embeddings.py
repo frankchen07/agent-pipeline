@@ -14,7 +14,7 @@ def _load_model(model_name: str = "all-MiniLM-L6-v2"):
         try:
             from sentence_transformers import SentenceTransformer
             logger.info(f"Loading embedding model: {model_name}")
-            _model = SentenceTransformer(model_name)
+            _model = SentenceTransformer(model_name, local_files_only=True)
         except ImportError:
             raise RuntimeError("sentence-transformers not installed. Run: pip install sentence-transformers")
     return _model
